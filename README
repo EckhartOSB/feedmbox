@@ -1,0 +1,41 @@
+what:		feedmbox.rb
+version:	1.0.0
+description:	Script to translate RSS 2.0 and ATOM 1.0 feeds into mbox format,
+		using OPML to specify the feeds to poll.
+author:		Chip Camden
+date:		March, 2011
+requires:	rubygems, nokogiri, mechanize, mailfactory, htmlentities, sqlite3
+usage: feedmbox.rb [-hv] [-d FILE] [-t RECIPIENT]
+    -d, --database FILE              Specify database location
+    -h, --help                       Print helpful information
+    -t, --to RECIPIENT               Specify recipient
+    -v, --verbose                    Verbose output on stderr
+
+This script takes as its input an OPML document describing the feeds to poll.
+You can pipe that on stdin, or list it as a file argument.  Any <outline>
+element in the OPML document that has a type equal to "rss" or "atom" is
+considered a feed.
+
+The database file (specified with -d, defaulting to ~/.feedmbox) is used to
+keep track of what feed items have been seen before.  This database contains
+the unique identifier for each item that has been previously encountered.
+The identifier is constructed from the feed's XML url and one of the following:
+an RSS "guid" element, an ATOM "id" element, or the link to the item.
+
+If an item has not been seen before, then it is converted into an email
+message and sent to stdout.  Thus, you can populate an mbox-formatted email
+folder by simply appending the output of this script to the desired folder.
+
+If you delete the database, or specify one that does not exist, it will be
+created.  On the first polling, all items from all feeds will be produced.
+
+The -t (--to) option specifies the email recipient.  This is only used for
+the content of the "To:" email header.  If not specified, it defaults to
+"nobody@example.com".
+
+If the -v (--verbose) option is specified, progress information will be
+sent to stderr.  This includes the title of each feed as it is polled, and
+the number of new items found (if any).  If -v is not specified, only errors
+will go to stderr.
+
+END

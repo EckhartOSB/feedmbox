@@ -12,6 +12,8 @@ require 'mailfactory'
 require 'htmlentities'
 require 'sqlite3'
 
+FEEDMBOX_VERSION = "1.0.0"
+
 def html2text html
   text = html.
     gsub(/(&nbsp;|\n|\s)+/im, ' ').squeeze(' ').strip.
@@ -61,6 +63,7 @@ optparse = OptionParser.new do |opts|
   end
 
   opts.on('-h', '--help', 'Print helpful information') do
+    $stderr.puts "feedmbox.rb version #{FEEDMBOX_VERSION}"
     $stderr.puts optparse
     exit
   end
