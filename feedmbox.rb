@@ -54,7 +54,7 @@ recip = "nobody@example.com"
 database = '~/.feedmbox'
 
 optparse = OptionParser.new do |opts|
-  opts.banner = 'usage: feedmbox.rb [-hv] [-t RECIPIENT]'
+  opts.banner = 'usage: feedmbox.rb [-hv] [-d FILE] [-t RECIPIENT]'
 
   opts.on('-d', '--database FILE', 'Specify database location') do |db|
     database = db
@@ -62,6 +62,7 @@ optparse = OptionParser.new do |opts|
 
   opts.on('-h', '--help', 'Print helpful information') do
     $stderr.puts optparse
+    exit
   end
 
   opts.on('-t', '--to RECIPIENT', 'Specify recipient') do |to|
