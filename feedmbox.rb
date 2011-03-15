@@ -39,7 +39,7 @@ def html2text html
       gsub(/<hr(| [^>]*)>/i, "___\n").
       gsub(/<li(| [^>]*)>/i, "\n* ").
       gsub(/<blockquote(| [^>]*)>/i, '> ').
-      gsub(/<(br)(| [^>]*)>/i, "\n").
+      gsub(/<(br)(\/?| [^>]*)>/i, "\n").
       gsub(/<(\/h[\d]+|p)(| [^>]*)>/i, "\n\n").
       gsub(/<[^>]*>/, '')
   ).lstrip.gsub(/\n[ ]+/, "\n") + "\n"
@@ -154,7 +154,8 @@ feeds.each do |feed|
 	  textnode = item.at('content') || item.children.find {|c| c.name == 'encoded' } || item.at('description') || item.at('summary')
 	  mail.text = html2text(textnode.inner_text || '')
 	  mail.set_header("To", recip)
-	  mail.hdr("From", channel.at('title'))
+	  domain = xmlurl.split(/[\/?]/)[2]
+	  mail.set_header("From", sprintf("%s <%s>", channel.at('title').inner_text, "feed@#{domain}"))
 	  mail.hdr("Subject", item.at('title'))
 	  date = item.at('pubDate') || item.at('published') || channel.at('pubDate')
 	  date = date ? DateTime.parse(date.inner_text) : Time.now
