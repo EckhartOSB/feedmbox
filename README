@@ -38,4 +38,24 @@ sent to stderr.  This includes the title of each feed as it is polled, and
 the number of new items found (if any).  If -v is not specified, only errors
 will go to stderr.
 
+EMAIL HEADERS
+
+Feedmbox adds the following email headers:
+
+Content-Location:	the feed's <link> destination
+Date:			the date the item was published
+From:			the feed title
+List-Id:		the feed title <feed xml url>
+Subject:		the title of the item
+To:			the recipient (as specified by the -t or --to switch)
+X-Feed-Subtitle:	the feed's subtitle
+X-Item-Author:		the author of the item
+X-Item-Category:	the categories for the item
+X-Item-Link:		the link to the current item's web page
+
+EMAIL CONTENT
+
+Feedmbox converts the item content to plain text.  It removes any scripts or
+styling, and attempts to replace other HTML tags with sane text equivalents.
+Links and images are footnoted to their URIs.
 END
