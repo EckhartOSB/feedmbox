@@ -51,12 +51,13 @@ def html2text html
   text
 end
 
-verbose = false
+verbose = 0
+debug = false
 recip = "nobody@example.com"
 database = '~/.feedmbox'
 
 optparse = OptionParser.new do |opts|
-  opts.banner = 'usage: feedmbox.rb [-hv] [-d FILE] [-t RECIPIENT]'
+  opts.banner = 'usage: feedmbox.rb [-hvV] [-d FILE] [-t RECIPIENT]'
 
   opts.on('-d', '--database FILE', 'Specify database location') do |db|
     database = db
@@ -72,9 +73,10 @@ optparse = OptionParser.new do |opts|
     recip = to
   end
 
-  opts.on('-v', '--verbose', 'Verbose output on stderr') do
-    verbose = true
+  opts.on('-v', '--verbose', 'Verbose output on stderr (-vv for more)') do
+    verbose += 1
   end
+
 end
 
 begin
@@ -120,7 +122,7 @@ end
 opml = Nokogiri::XML::parse $<.read
 feeds = opml.xpath("//outline[@type='rss']|//outline[@type='atom']")
 feeds.each do |feed|
-  $stderr.puts "Polling: #{feed.get_attribute('text')}" if verbose
+  $stderr.puts "Polling: #{feed.get_attribute('text')}" if verbose > 0
   xmlurl = feed.get_attribute("xmlUrl")
   if xmlurl
     begin
@@ -144,11 +146,14 @@ feeds.each do |feed|
         raise "Not an RSS 2.0 or ATOM 1.0 feed"
       end
       count = 0
+      $stderr.puts "  #{items.size} item#{'s' if items.size != 1} in feed" if verbose > 1
       items.each do |item|
 	itemlink = item.at('link')
 	itemlink = itemlink.attribute('href') || itemlink.inner_text
 	guid = "#{xmlurl}/#{((item.at('guid') || item.at('id')).inner_text || itemlink)}"
+	$stderr.print "    guid => #{guid}" if verbose > 1
         if (!db.get_first_row("select guid from HISTORY where guid = ?", guid))
+	  $stderr.puts "   new" if verbose > 1
 	  db.execute("insert into HISTORY (guid) values (?)", guid)
 	  mail = MailFactory.new
 	  textnode = item.at('content') || item.children.find {|c| c.name == 'encoded' } || item.at('description') || item.at('summary')
@@ -170,9 +175,11 @@ feeds.each do |feed|
 	  puts mail.to_s.gsub("\r","")		# MailFactory malefactory
 	  puts ""
 	  count += 1
+	else
+	  $stderr.puts "   already seen" if verbose > 1
         end
       end
-      $stderr.puts "  #{count} new item#{'s' if count != 1}" if (verbose && (count > 0))
+      $stderr.puts "  #{count} new item#{'s' if count != 1}" if ((verbose > 0) && (count > 0))
     rescue Interrupt
       exit
     rescue Exception => e
