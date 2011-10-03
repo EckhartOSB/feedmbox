@@ -102,6 +102,12 @@ class MailFactory
   end
 end
 
+class Nokogiri::XML::Node
+  def nat(name)
+    self.children.find {|c| c.name == name } 
+  end
+end
+
 database = File.expand_path(database)
 newdb = !File.exists?(database)
 db = SQLite3::Database.new(database)
@@ -135,18 +141,22 @@ feeds.each do |feed|
       chanlink = nil
       chanauthor = nil
       subtitle = nil
-      if (channel = xml.at('rss/channel'))	# RSS 2.0
+      if (channel = xml.at('rss/channel'))				# RSS 2.0
         items = channel.xpath('item')
 	chanlink = channel.at('link').inner_text
 	subtitle = channel.at('description')
-      elsif (channel = xml.at('feed'))		# ATOM 1.0
+      elsif (channel = xml.at('feed'))					# ATOM 1.0
         items = channel.xpath('entry')
 	chanlink = channel.at('link')
 	chanlink = chanlink ? chanlink.attribute('href') : ''
 	chanauthor = channel.at('author/name')
 	subtitle = channel.at('subtitle')
+      elsif (rdf = xml.nat('RDF')) && (channel = rdf.at('channel'))	# RSS 1.0
+        items = rdf.children.select {|c| c.name == "item"}
+	chanlink = channel.at('link')
+	subtitle = channel.at('description')
       else
-        raise "Not an RSS 2.0 or ATOM 1.0 feed"
+        raise "Not an RSS 2.0, ATOM 1.0, or RSS 1.0 feed"
       end
       count = 0
       $stderr.puts "  #{items.size} item#{'s' if items.size != 1} in feed" if verbose > 1
@@ -159,19 +169,19 @@ feeds.each do |feed|
 	  $stderr.puts "   new" if verbose > 1
 	  db.execute("insert into HISTORY (guid) values (?)", guid)
 	  mail = MailFactory.new
-	  textnode = item.at('content') || item.children.find {|c| c.name == 'encoded' } || item.at('description') || item.at('summary')
+	  textnode = item.at('content') || item.nat('encoded') || item.at('description') || item.at('summary')
 	  mail.text = html2text(textnode.inner_text || '')
 	  mail.set_header("To", recip)
 	  domain = xmlurl.split(/[\/?]/)[2]
 	  mail.set_header("From", sprintf("%s <%s>", channel.at('title').inner_text, "feed@#{domain}"))
 	  mail.hdr("Subject", item.at('title'))
-	  date = item.at('pubDate') || item.at('published') || channel.at('pubDate')
+	  date = item.at('pubDate') || item.at('published') || item.nat('date') || channel.at('pubDate')
 	  date = date ? DateTime.parse(date.inner_text) : Time.now
 	  mail.set_header("Date", date.strftime("%a, %b %d %Y %H:%M:%S"))
 	  mail.set_header("List-Id", sprintf("%s <%s>", (channel.at('title').inner_text || ''), xmlurl))
 	  mail.set_header("Content-Location", chanlink)
 	  mail.hdr("X-Feed-Subtitle", subtitle)
-	  mail.hdr("X-Item-Author", (item.children.find {|c| c.name == 'creator' } || item.at('author/name') || item.at('author') || chanauthor))
+	  mail.hdr("X-Item-Author", (item.nat('creator') || item.at('author/name') || item.at('author') || chanauthor))
 	  mail.hdr("X-Item-Category", item.at('category'))
 	  mail.set_header("X-Item-Link", itemlink)
 	  puts "From feedmbox #{date.strftime('%a %b %d %H:%M:%S %Y')}"

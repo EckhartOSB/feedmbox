@@ -1,7 +1,7 @@
 what:		feedmbox.rb
 version:	1.0.0
-description:	Script to translate RSS 2.0 and ATOM 1.0 feeds into mbox format,
-		using OPML to specify the feeds to poll.
+description:	Script to translate RSS 2.0, ATOM 1.0, and RSS 1.0 feeds into
+		mbox format, using OPML to specify the feeds to poll.
 author:		Chip Camden
 date:		March, 2011
 requires:	rubygems, nokogiri, mechanize, mailfactory, htmlentities, sqlite3
