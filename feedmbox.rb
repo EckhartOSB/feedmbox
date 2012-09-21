@@ -162,7 +162,7 @@ feeds.each do |feed|
       $stderr.puts "  #{items.size} item#{'s' if items.size != 1} in feed" if verbose > 1
       items.each do |item|
 	itemlink = item.at('link')
-	itemlink = itemlink.attribute('href') || itemlink.inner_text
+	itemlink = (itemlink.attribute('href') || itemlink.inner_text) if itemlink
 	guid = "#{xmlurl}/#{((item.at('guid') || item.at('id')).inner_text || itemlink)}"
 	$stderr.print "    guid => #{guid}" if verbose > 1
         if (!db.get_first_row("select guid from HISTORY where guid = ?", guid))
@@ -183,7 +183,7 @@ feeds.each do |feed|
 	  mail.hdr("X-Feed-Subtitle", subtitle)
 	  mail.hdr("X-Item-Author", (item.nat('creator') || item.at('author/name') || item.at('author') || chanauthor))
 	  mail.hdr("X-Item-Category", item.at('category'))
-	  mail.set_header("X-Item-Link", itemlink)
+	  mail.set_header("X-Item-Link", itemlink) if itemlink
 	  puts "From feedmbox #{date.strftime('%a %b %d %H:%M:%S %Y')}"
 	  puts mail.to_s.gsub("\r","")		# MailFactory malefactory
 	  puts ""
